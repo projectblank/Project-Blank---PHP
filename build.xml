@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Project Blank
+ 
+  LICENSE
+ 
+  This source file is subject to the new BSD license that is bundled
+  with this package in the file LICENSE.txt.
+  It is also available through the world-wide-web at this URL:
+  http://projectblank.com/license/
+  If you did not receive a copy of the license and are unable to
+  obtain it through the world-wide-web, please send an email
+  to license@projectblank.com so we can send you a copy immediately.
+ 
+  @copyright  Copyright (c) 2012 Project Blank. (http://www.projectblank.com)
+  @license    http://projectblank.com/license/
+  @author     Alair J. Tavares (alairjt@projectblank.com)
+-->
+
+<project name="Project Blank" default="build">
+	<!-- Load properties -->
+	<property file="build.properties" />
+	
+	<!-- Define includepath -->
+	<includepath classpath="${base.src.dir}:${lib.phpunit.dir}:${lib.phpmd.dir}:${lib.phpdepend.dir}:${lib.phpcpd.dir}:${lib.phpcodesniffer.dir}:${lib.phpdoc.dir}:${lib.pear.dir}:${lib.archive_tar.dir}" />
+
+	<!-- build: Build Project in tar.gz -->
+	<target name="build">
+		<!-- Delete the build directory -->
+		<delete dir="${build.dir}" />
+
+		<!--<phingcall target="deploy" />
+		<phingcall target="prepare.to.report" />
+		<phingcall target="run.report.test.unit" />
+		<phingcall target="run.report.test.integrated" />
+		<phingcall target="build.database.normal" />-->
+
+		<!-- Create the build directory -->
+		<mkdir dir="${build.dir}" />
+
+		<!-- Build the package -->
+		<tar destfile="${build.filename}" compression="gzip">
+			<fileset dir="${base.src.dir}">
+				<include name="**/*" />
+				<exclude name="**/tests/" />
+				<exclude name="**/.svn/" />
+			</fileset>
+		</tar>
+	</target>
+
+	<!-- prepare.to.report: Creates the necessary directories -->
+	<target name="prepare.to.report">
+		<delete dir="${report.dir}" />
+		<mkdir dir="${report.dir}" />
+		<mkdir dir="${report.test.unit.dir}" />
+		<mkdir dir="${report.test.integrated.dir}" />
+		<mkdir dir="${report.coverage.unit.dir}" />
+		<mkdir dir="${report.coverage.integrated.dir}" />
+		<mkdir dir="${report.cpd.dir}" />
+		<mkdir dir="${report.phpdepend.dir}" />
+		<mkdir dir="${report.phpdepend.tempstorage.dir}" />
+		<mkdir dir="${report.phpmd.dir}" />
+		<mkdir dir="${report.checkstyle.dir}" />
+		<mkdir dir="${report.phpdoc.dir}" />
+	</target>
+	
+	<!-- generate.report.all: Generates all reports -->
+	<target name="generate.report.all" depends="prepare.to.report, generate.report.cpd, generate.report.md, generate.report.depend"/>
+
+	<!-- generate.report.doc.only: Creates the necessary directories + Generates the document (PHPDoc) -->
+	<target name="generate.report.doc.only" depends="prepare.to.report, generate.report.doc"/>
+
+	<!-- generate.report.doc: Generates the document (PHPDoc)  -->
+	<target name="generate.report.doc">
+		<phpdoc title="Project Blank" destdir="${report.phpdoc.dir}" sourcecode="true" quiet="true" output="HTML:Smarty:PHP">
+		   <fileset dir="${base.src.dir}">
+				<include name="**/*.php" />
+				<exclude name="**/Zend/"/>
+				<exclude name="**/tests/" />
+				<exclude name="**/.svn/" />
+			</fileset>
+		</phpdoc>
+	</target>
+
+	<!-- generate.report.sniffer.only: Creates the necessary directories + Generate the report -->
+	<target name="generate.report.sniffer.only" depends="prepare.to.report, generate.report.sniffer"/>
+
+	<!-- generate.report.sniffer: Generate the report -->
+	<target name="generate.report.sniffer">
+		<phpcodesniffer standard="PEAR" tabWidth="4" docGenerator="HTML" docFile="${report.checkstyle.dir}/checkstyle.html">
+			<fileset dir="${base.src.dir}">
+				<include name="**/*.php" />
+				<exclude name="**/Zend/" />
+				<exclude name="**/tests/" />
+				<exclude name="**/.svn/" />
+			</fileset>
+			<formatter type="full" outfile="${report.checkstyle.dir}/full"/>
+			<formatter type="source" outfile="${report.checkstyle.dir}/source"/>
+ 			<formatter type="checkstyle" outfile="${report.checkstyle.dir}/checkstyle.xml"/>
+			<formatter type="summary" outfile="${report.checkstyle.dir}/summary"/>
+		</phpcodesniffer>
+	</target>
+	
+	<!-- generate.report.cpd.only: Creates the necessary directories + Report duplicate sources -->
+	<target name="generate.report.cpd.only" depends="prepare.to.report, generate.report.cpd"/>
+
+	<!-- generate.report.cpd: Report duplicate sources -->
+	<target name="generate.report.cpd">
+		<phpcpd>
+			<fileset dir="${base.src.dir}" id="filestocpd">
+				<include name="**/*.php" />
+				<exclude name="**/Zend/" />
+				<exclude name="**/tests/" />
+				<exclude name="**/.svn/" />
+			</fileset>
+			<formatter type="pmd" outfile="${report.cpd.dir}/pmd-cpd.xml" />
+		</phpcpd>
+	</target>
+	
+	<!-- generate.report.md.only: Creates the necessary directories + Report bad coding practices -->
+	<target name="generate.report.md.only" depends="prepare.to.report, generate.report.md"/>
+
+	<!-- generate.report.md: Report bad coding practices -->
+	<target name="generate.report.md">
+		<phpmd>
+			<fileset dir="${base.src.dir}">
+				<include name="**/*.php" />
+				<exclude name="**/Zend/" />
+				<exclude name="**/tests/" />
+				<exclude name="**/.svn/" />
+			</fileset>
+			<formatter type="html" outfile="${report.phpmd.dir}/phpmd.html" />
+		</phpmd>
+	</target>
+
+	<!-- generate.report.depend.only: Creates the necessary directories + Report class dependencies -->
+	<target name="generate.report.depend.only" depends="prepare.to.report, generate.report.depend"/>
+
+	<!-- generate.report.depend: Report class dependencies -->
+	<target name="generate.report.depend">
+		<phpdepend>
+			<fileset dir="${base.src.dir}">
+				<include name="**/*.php" />
+				<exclude name="**/Zend/" />
+				<exclude name="**/tests/" />
+				<exclude name="**/.svn/" />
+			</fileset>
+			<logger type="jdepend-xml" outfile="${report.phpdepend.dir}/phpdepend.xml" />
+		</phpdepend>
+	</target>
+</project>
